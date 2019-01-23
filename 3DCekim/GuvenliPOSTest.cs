@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AdaPublicGenel.Genel;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using NUnit.Framework;
 
 namespace _3DCekim
@@ -49,7 +50,9 @@ namespace _3DCekim
 			{
 				BankaSistemi3DOnayUrl = _banka3DOnayUrl
 			};
+
 			_bankaninCevabi = IstekSonuc<BankaCekimIstegiSonucu>.Basari("", _bankaSonuc);
+
 			_banka.CekimIstegiGonder(_siparisBilgi).Returns(_bankaninCevabi);
 
 		}
@@ -113,13 +116,27 @@ namespace _3DCekim
 		{
 			_pos.CekimIstegiGonder(_siparisBilgi);
 
-			_veritabaniVekili.ReceivedWithAnyArgs().Bankadan3DOnayiBekleyenIslemKaydet(_siparisBilgi, "", _bankaSonuc);
+			_veritabaniVekili.Received().BankayaIstekOncesiIslemKaydet(_siparisBilgi, Arg.Any<string>());
+			_veritabaniVekili.Received().BankadanGelenCevapIleIslemKaydiniGuncelle(Arg.Any<long>(), _bankaSonuc);
+		}
+
+		[Test]
+		public void BankaCekimIstegineExceptionAtarsaBuLoglanir()
+		{
+			Exception hata = new Exception();
+			_banka.CekimIstegiGonder(Arg.Any<SiparisBilgi>()).Throws(hata);
+
+			_pos.CekimIstegiGonder(_siparisBilgi);
+
+			_veritabaniVekili.Received().BankaHatasiniLogla(Arg.Any<long>(), hata);
 		}
 	}
 
 	public interface IGuvenliPOSVeritabaniVekili
 	{
-		void Bankadan3DOnayiBekleyenIslemKaydet(SiparisBilgi siparisBilgi, string guid, BankaCekimIstegiSonucu bankaSonuc);
+		long BankayaIstekOncesiIslemKaydet(SiparisBilgi siparisBilgi, string guid);
+		void BankadanGelenCevapIleIslemKaydiniGuncelle(long id, BankaCekimIstegiSonucu bankaSonuc);
+		void BankaHatasiniLogla(long  id, Exception hata);
 	}
 
 	public interface IBankaSecen

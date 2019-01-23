@@ -1,4 +1,6 @@
-﻿using AdaGenel.Cesitli;
+﻿using System;
+using AdaGenel.Cesitli;
+using AdaGenel.Extensions;
 using AdaPublicGenel.Extensions;
 using AdaPublicGenel.Genel;
 
@@ -26,11 +28,24 @@ namespace _3DCekim
 			//string guid = bankayaGonderilecekGuidOlustur();
 			string guid = "";
 
-			var cekimIstegiSonuc = banka?.CekimIstegiGonder(siparisBilgi);
+			long islemKayitId = _veritabaniVekili.BankayaIstekOncesiIslemKaydet(siparisBilgi, guid);
 
-			_veritabaniVekili.Bankadan3DOnayiBekleyenIslemKaydet(siparisBilgi, guid, cekimIstegiSonuc.Nesne);
+			try
+			{
+				var cekimIstegiSonuc = banka?.CekimIstegiGonder(siparisBilgi);
+				if (cekimIstegiSonuc != null)
+				{
+					_veritabaniVekili.BankadanGelenCevapIleIslemKaydiniGuncelle(islemKayitId, cekimIstegiSonuc.Nesne);
+					return cekimIstegiSonuc;
+				}
 
-			return cekimIstegiSonuc;
+				return null;
+			}
+			catch (Exception ex)
+			{
+				_veritabaniVekili.BankaHatasiniLogla(islemKayitId, ex);
+				return IstekSonuc<BankaCekimIstegiSonucu>.Hata("Banka çekimi sırasında hata oluştu - " + ex.DosyayaLoglanacakStringAl());
+			}
 		}
 
 		private string bankayaGonderilecekGuidOlustur()

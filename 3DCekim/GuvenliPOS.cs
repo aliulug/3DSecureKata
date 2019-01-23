@@ -17,6 +17,7 @@ namespace _3DCekim
 			_veritabaniVekili = veritabaniVekili;
 		}
 
+
 		public IstekSonuc<BankaCekimIstegiSonucu> CekimIstegiGonder(SiparisBilgi siparisBilgi)
 		{
 			IstekSonuc siparisBilgiOnKontrolSonucu = siparisBilgileriGecerliMi(siparisBilgi);
